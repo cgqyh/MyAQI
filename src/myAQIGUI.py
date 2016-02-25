@@ -32,7 +32,7 @@ class MainFrame ( wx.Frame ):
     
     def __init__( self, parent ):
         wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MyAQI", \
-            pos = wx.DefaultPosition, size = wx.Size( 800,250 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+            pos = wx.DefaultPosition, size = wx.Size( 800,300 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 
         #####################################################
         # Manual Add Code
