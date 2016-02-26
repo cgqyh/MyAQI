@@ -23,6 +23,8 @@ from matplotlib.ticker import MultipleLocator, FuncFormatter
 import pylab  
 from matplotlib import pyplot 
 
+import dataCollect
+
 
 ###########################################################################
 ## Class MainFrame
@@ -103,6 +105,19 @@ class MainFrame ( wx.Frame ):
         self.m_btn_stop.Bind( wx.EVT_BUTTON, self.onStop )
         self.m_btn_quit.Bind( wx.EVT_BUTTON, self.onQuit )
         self.Bind( wx.EVT_TIMER, self.onTimer, id=wx.ID_ANY )
+
+
+
+
+        # Create object for AQI data
+
+        self.tickerData = dataCollect.AQIdata()
+
+
+
+
+
+
     
     def __del__( self ):
         pass
@@ -110,7 +125,7 @@ class MainFrame ( wx.Frame ):
     
     # Virtual event handlers, overide them in your derived class
     def onStart( self, event ):
-        self.timer.Start(1000)
+        self.timer.Start(100)
     
     def onStop( self, event ):
         self.timer.Stop()
@@ -119,8 +134,20 @@ class MainFrame ( wx.Frame ):
         self.Close()
 
     def onTimer( self, event ):
-        print('Hello World')
-        
+        self.tickerData.updateElement()
+        self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'--*g')  
+
+        print(self.tickerData.y25Ticker)
+
+
+    def plot(self,*args,**kwargs):  
+        '''''#最常用的绘图命令plot '''  
+        self.axes.plot(*args,**kwargs)  
+        self.__updatePlot()  
+
+    def __updatePlot(self):  
+        '''''need to use this function update graphy if any data updated '''  
+        self.FigureCanvas.draw()          
 
 if __name__ == '__main__':
 
