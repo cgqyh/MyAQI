@@ -43,7 +43,8 @@ class MainFrame ( wx.Frame ):
         # self.Figure = matplotlib.figure.Figure(figsize=(10,3), dpi=self.dpi)
         self.Figure = matplotlib.figure.Figure(figsize=(50,20))
         # self.axes = self.Figure.add_axes([0.1,0.1,0.8,0.8])
-        self.axes = self.Figure.add_subplot(111)
+        self.axes25 = self.Figure.add_subplot(111)
+        self.axes10 = self.axes25.twinx()
 
         self.FigureCanvas = FigureCanvas(self,-1,self.Figure) 
         #####################################################
@@ -116,15 +117,15 @@ class MainFrame ( wx.Frame ):
         self.tickerData = dataCollect.AQIdata()
 
         # initial plot the graphy here, only need to update data later
-        self.plot_data = self.axes.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'--+r', \
-            self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')[0]  
 
+        # self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker, '--+r', self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')  
+        self.plot_data25 = self.axes25.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'-+r')[0]  
+        self.plot_data10 = self.axes10.plot(self.tickerData.xTicker,self.tickerData.y10Ticker,'-*g')[0]  
 
+        self.axes25.set_axis_bgcolor('gray')
 
-        self.axes.set_axis_bgcolor('black')
-
-        pylab.setp(self.axes.get_xticklabels(), fontsize=8)
-        pylab.setp(self.axes.get_yticklabels(), fontsize=8)
+        # pylab.setp(self.axes.get_xticklabels(), fontsize=8)
+        # pylab.setp(self.axes.get_yticklabels(), fontsize=8)
 
 
     
@@ -145,31 +146,33 @@ class MainFrame ( wx.Frame ):
     def onTimer( self, event ):
         self.tickerData.updateElement()
 
-        # self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker, '--+r', self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')  
+
 
         self.plot()
 
 
     def plot(self,*args,**kwargs):  
-        '''''#最常用的绘图命令plot '''  
+        '''update the plot here'''
 
         xmin = min(self.tickerData.xTicker)
         xmax = max(self.tickerData.xTicker)
 
         ymin = 0
-        ymax = max(self.tickerData.y25Ticker)
+        ymax = max(max(self.tickerData.y25Ticker), max(self.tickerData.y10Ticker))
 
+        self.axes25.set_xbound(lower=xmin, upper=xmax)
+        self.axes25.set_ybound(lower=ymin, upper=ymax)
 
-        self.axes.set_xbound(lower=xmin, upper=xmax)
-        self.axes.set_ybound(lower=ymin, upper=ymax)
+        self.axes10.set_xbound(lower=xmin, upper=xmax)
+        self.axes10.set_ybound(lower=ymin, upper=ymax)
 
-        self.plot_data.set_xdata(self.tickerData.xTicker)
-        self.plot_data.set_ydata(self.tickerData.y25Ticker)
+        self.plot_data25.set_xdata(self.tickerData.xTicker)
+        self.plot_data25.set_ydata(self.tickerData.y25Ticker)
 
+        self.plot_data10.set_xdata(self.tickerData.xTicker)
+        self.plot_data10.set_ydata(self.tickerData.y10Ticker)
 
         self.__updatePlot()  
-
-        print len(self.tickerData.xTicker)
 
     def __updatePlot(self):  
         '''''need to use this function update graphy if any data updated '''  
