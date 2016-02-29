@@ -34,12 +34,17 @@ class MainFrame ( wx.Frame ):
     
     def __init__( self, parent ):
         wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MyAQI", \
-            pos = wx.DefaultPosition, size = wx.Size( 800,300 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+            pos = wx.DefaultPosition, size = wx.Size( 800,400 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 
         #####################################################
         # Manual Add Code
-        self.Figure = matplotlib.figure.Figure(figsize=(100,20))
-        self.axes = self.Figure.add_axes([0.1,0.1,0.8,0.8])  
+
+        self.dpi = 100
+        # self.Figure = matplotlib.figure.Figure(figsize=(10,3), dpi=self.dpi)
+        self.Figure = matplotlib.figure.Figure(figsize=(50,20))
+        # self.axes = self.Figure.add_axes([0.1,0.1,0.8,0.8])
+        self.axes = self.Figure.add_subplot(111)
+
         self.FigureCanvas = FigureCanvas(self,-1,self.Figure) 
         #####################################################
 
@@ -80,16 +85,13 @@ class MainFrame ( wx.Frame ):
         self.m_staticText4.Wrap( -1 )
         leftSizer.Add( self.m_staticText4, 0, wx.ALL | wx.EXPAND, 5 )
         
-        # bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
-        # leftSizer.Add( bSizer3, 1, wx.ALL|wx.EXPAND, 5 )
-        
-        
+
         MainSizer.Add( leftSizer, 1, wx.ALL | wx.EXPAND, 5 )
         
         self.m_staticline1 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
         MainSizer.Add( self.m_staticline1, 0, wx.EXPAND | wx.ALL, 5 )
 
-        MainSizer.Add(self.FigureCanvas,proportion =-10, border = 2,flag = wx.ALL | wx.EXPAND)  
+        MainSizer.Add(self.FigureCanvas,proportion =-10, border = 2,flag = wx.ALL | wx.GROW)  
         
         
         self.SetSizer( MainSizer )
@@ -113,9 +115,16 @@ class MainFrame ( wx.Frame ):
 
         self.tickerData = dataCollect.AQIdata()
 
+        # initial plot the graphy here, only need to update data later
+        self.plot_data = self.axes.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'--+r', \
+            self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')[0]  
 
 
 
+        self.axes.set_axis_bgcolor('black')
+
+        pylab.setp(self.axes.get_xticklabels(), fontsize=8)
+        pylab.setp(self.axes.get_yticklabels(), fontsize=8)
 
 
     
@@ -135,19 +144,38 @@ class MainFrame ( wx.Frame ):
 
     def onTimer( self, event ):
         self.tickerData.updateElement()
-        self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'--*g')  
 
-        print(self.tickerData.y25Ticker)
+        # self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker, '--+r', self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')  
+
+        self.plot()
 
 
     def plot(self,*args,**kwargs):  
         '''''#最常用的绘图命令plot '''  
-        self.axes.plot(*args,**kwargs)  
+
+        xmin = min(self.tickerData.xTicker)
+        xmax = max(self.tickerData.xTicker)
+
+        ymin = 0
+        ymax = max(self.tickerData.y25Ticker)
+
+
+        self.axes.set_xbound(lower=xmin, upper=xmax)
+        self.axes.set_ybound(lower=ymin, upper=ymax)
+
+        self.plot_data.set_xdata(self.tickerData.xTicker)
+        self.plot_data.set_ydata(self.tickerData.y25Ticker)
+
+
         self.__updatePlot()  
+
+        print len(self.tickerData.xTicker)
 
     def __updatePlot(self):  
         '''''need to use this function update graphy if any data updated '''  
-        self.FigureCanvas.draw()          
+        self.FigureCanvas.draw()    
+
+    
 
 if __name__ == '__main__':
 

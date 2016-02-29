@@ -20,9 +20,15 @@ class AQIdata(object):
         self.pm25 = 0
         self.pm10 = 0
 
+        # self.xtimeList = []
+        # self.y25List = []
+        # self.y10List = []
+
         self.xTicker = np.array([])
         self.y25Ticker = np.array([])
         self.y10Ticker = np.array([])
+
+
 
     def __getAQIdata(self):
 
@@ -34,9 +40,14 @@ class AQIdata(object):
 
     def updateElement(self):
         self.__getAQIdata()
+
         self.xTicker = np.append(self.xTicker, self.timeStamp)
         self.y25Ticker = np.append(self.y25Ticker, self.pm25)
         self.y10Ticker = np.append(self.y10Ticker, self.pm10)
+
+        # self.xtimeList.append(self.timeStamp)
+        # self.y25List.append(self.pm25)
+        # self.y10List.append(self.pm10)
 
 
 def runTimer():
