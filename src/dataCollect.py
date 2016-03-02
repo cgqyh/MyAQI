@@ -40,8 +40,7 @@ class AQIdata(object):
     def __getAQIdata(self):
 
         
-        self.timeStamp = time.time()
-        self.timeStr = time.strftime('%d%b%Y_%H%M%S', time.localtime(self.timeStamp))
+
 
         avrgnum = 1.0
 
@@ -70,7 +69,10 @@ class AQIdata(object):
         pm25qty = 0
         pm10qty = 0
 
-        for i in range(int(avrgnum):
+        self.timeStamp = time.time()
+        self.timeStr = time.strftime('%d%b%Y_%H%M%S', time.localtime(self.timeStamp))
+
+        for i in range(int(avrgnum)):
              
             str = self.rs232.read(32) 
             pm25qty = int(binascii.b2a_hex(str[6]),16)*256+int(binascii.b2a_hex(str[7]),16) + pm25qty

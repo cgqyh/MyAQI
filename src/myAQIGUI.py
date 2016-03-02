@@ -12,6 +12,9 @@ import wx
 import wx.xrc
 
 import matplotlib  
+
+from matplotlib import dates
+import datetime
   
 # matplotlib采用WXAgg为后台,将matplotlib嵌入wxPython中  
 matplotlib.use("WXAgg")  
@@ -24,6 +27,7 @@ import pylab
 from matplotlib import pyplot 
 
 import dataCollect
+
 
 
 ###########################################################################
@@ -41,7 +45,7 @@ class MainFrame ( wx.Frame ):
 
         self.dpi = 100
         # self.Figure = matplotlib.figure.Figure(figsize=(10,3), dpi=self.dpi)
-        self.Figure = matplotlib.figure.Figure(figsize=(50,20))
+        self.Figure = matplotlib.figure.Figure(figsize=(50,30))
         # self.axes = self.Figure.add_axes([0.1,0.1,0.8,0.8])
         self.axes25 = self.Figure.add_subplot(111)
         self.axes10 = self.axes25.twinx()
@@ -124,10 +128,20 @@ class MainFrame ( wx.Frame ):
 
         self.axes25.set_axis_bgcolor('gray')
 
-        # pylab.setp(self.axes.get_xticklabels(), fontsize=8)
-        # pylab.setp(self.axes.get_yticklabels(), fontsize=8)
+        hfmt = dates.DateFormatter('%m/%d %H:%M')
+        # hfmt = dates.DateFormatter('%H:%M')
+        self.axes25.xaxis.set_major_locator(dates.MinuteLocator())
+        self.axes25.xaxis.set_major_formatter(hfmt)
+        self.axes10.xaxis.set_major_locator(dates.MinuteLocator())
+        self.axes10.xaxis.set_major_formatter(hfmt)    
+        
+        # self.axes25.get_xticklabels(), fontsize=8)
+        # self.axes25.get_yticklabels(), fontsize=8)
+        # self.axes10.get_xticklabels(), fontsize=8)
+        # self.axes10.get_yticklabels(), fontsize=8)
 
-        self.sleepTime = 15000
+
+        self.sleepTime = 5000
 
 
     
@@ -154,8 +168,13 @@ class MainFrame ( wx.Frame ):
     def plot(self,*args,**kwargs):  
         '''update the plot here'''
 
-        xmin = min(self.tickerData.xTicker)
-        xmax = max(self.tickerData.xTicker)+1
+         # how to change the x axis to time format
+
+        dts = map(datetime.datetime.fromtimestamp, self.tickerData.xTicker)
+        fds = dates.date2num(dts) # converted
+
+        xmin = min(fds)
+        xmax = max(fds)+0.001
 
         ymin = 0
         ymax = max(max(self.tickerData.y25Ticker), max(self.tickerData.y10Ticker))*1.5
@@ -166,11 +185,18 @@ class MainFrame ( wx.Frame ):
         self.axes10.set_xbound(lower=xmin, upper=xmax)
         self.axes10.set_ybound(lower=ymin, upper=ymax)
 
-        self.plot_data25.set_xdata(self.tickerData.xTicker)
+        self.plot_data25.set_xdata(fds)
+        # self.plot_data25.set_xdata(self.tickerData.xTicker)
         self.plot_data25.set_ydata(self.tickerData.y25Ticker)
 
-        self.plot_data10.set_xdata(self.tickerData.xTicker)
+        self.plot_data10.set_xdata(fds)
+        # self.plot_data10.set_xdata(self.tickerData.xTicker)
         self.plot_data10.set_ydata(self.tickerData.y10Ticker)
+
+        xlabels = self.axes25.get_xticklabels()
+        for xl in xlabels:
+            xl.set_rotation(45) 
+
 
         self.__updatePlot()  
 
