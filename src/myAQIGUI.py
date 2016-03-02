@@ -127,7 +127,7 @@ class MainFrame ( wx.Frame ):
         # pylab.setp(self.axes.get_xticklabels(), fontsize=8)
         # pylab.setp(self.axes.get_yticklabels(), fontsize=8)
 
-        self.sleepTime = 5000
+        self.sleepTime = 15000
 
 
     

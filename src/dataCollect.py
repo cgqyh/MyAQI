@@ -43,6 +43,8 @@ class AQIdata(object):
         self.timeStamp = time.time()
         self.timeStr = time.strftime('%d%b%Y_%H%M%S', time.localtime(self.timeStamp))
 
+        avrgnum = 1.0
+
 
         # # random data for debug purpose
         # self.pm25 = random.random()
@@ -68,14 +70,14 @@ class AQIdata(object):
         pm25qty = 0
         pm10qty = 0
 
-        for i in range(1):
+        for i in range(int(avrgnum):
              
             str = self.rs232.read(32) 
             pm25qty = int(binascii.b2a_hex(str[6]),16)*256+int(binascii.b2a_hex(str[7]),16) + pm25qty
             pm10qty = int(binascii.b2a_hex(str[8]),16)*256+int(binascii.b2a_hex(str[9]),16) + pm10qty
 
-        # pm25qty = pm25qty/10.0
-        # pm10qty = pm10qty/10.0
+        pm25qty = pm25qty/avrgnum
+        pm10qty = pm10qty/avrgnum
 
         self.pm25 = self.__qty2aqi(pm25qty)
         self.pm10 = self.__qty2aqi(pm10qty)
