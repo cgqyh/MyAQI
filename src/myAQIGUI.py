@@ -127,6 +127,8 @@ class MainFrame ( wx.Frame ):
         # pylab.setp(self.axes.get_xticklabels(), fontsize=8)
         # pylab.setp(self.axes.get_yticklabels(), fontsize=8)
 
+        self.sleepTime = 5000
+
 
     
     def __del__( self ):
@@ -135,7 +137,7 @@ class MainFrame ( wx.Frame ):
     
     # Virtual event handlers, overide them in your derived class
     def onStart( self, event ):
-        self.timer.Start(100)
+        self.timer.Start(self.sleepTime)
     
     def onStop( self, event ):
         self.timer.Stop()
@@ -144,9 +146,7 @@ class MainFrame ( wx.Frame ):
         self.Close()
 
     def onTimer( self, event ):
-        self.tickerData.updateElement()
-
-
+        self.tickerData.updateElement(self.sleepTime)
 
         self.plot()
 
@@ -155,10 +155,10 @@ class MainFrame ( wx.Frame ):
         '''update the plot here'''
 
         xmin = min(self.tickerData.xTicker)
-        xmax = max(self.tickerData.xTicker)
+        xmax = max(self.tickerData.xTicker)+1
 
         ymin = 0
-        ymax = max(max(self.tickerData.y25Ticker), max(self.tickerData.y10Ticker))
+        ymax = max(max(self.tickerData.y25Ticker), max(self.tickerData.y10Ticker))*1.5
 
         self.axes25.set_xbound(lower=xmin, upper=xmax)
         self.axes25.set_ybound(lower=ymin, upper=ymax)
