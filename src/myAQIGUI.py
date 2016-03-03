@@ -255,8 +255,8 @@ class MainFrame ( wx.Frame ):
         elif diff < timedelta(hours=6):
             hfmt = dates.DateFormatter('%H:%M')
             self.axes25.xaxis.set_major_formatter(hfmt)
-            self.axes25.xaxis.set_major_locator(dates.HourLocator(interval=1))
-            self.axes25.xaxis.set_minor_locator(dates.MinuteLocator(interval=15))
+            self.axes25.xaxis.set_major_locator(dates.MinuteLocator(interval=30))
+            self.axes25.xaxis.set_minor_locator(dates.MinuteLocator(interval=10))
 
         elif diff < timedelta(days=2):
             hfmt = dates.DateFormatter('%H:%M')
