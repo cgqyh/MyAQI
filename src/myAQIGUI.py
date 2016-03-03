@@ -14,8 +14,8 @@ import wx.xrc
 import matplotlib  
 
 from matplotlib import dates
-import datetime
-  
+from datetime import datetime,timedelta
+
 # matplotlib采用WXAgg为后台,将matplotlib嵌入wxPython中  
 matplotlib.use("WXAgg")  
   
@@ -27,12 +27,24 @@ import pylab
 from matplotlib import pyplot 
 
 import dataCollect
+from Queue import Queue, Empty
+from threading import Thread
 
+EVENT_TIMER = 'eTimer'
 
 
 ###########################################################################
-## Class MainFrame
+## Event type
 ###########################################################################
+class Event(object):
+
+    #----------------------------------------------------------------------
+    def __init__(self, handle, type_=None):
+        """Constructor"""
+        self.handle = handle
+        self.type_ = type_     
+
+
 
 class MainFrame ( wx.Frame ):
     
@@ -128,53 +140,95 @@ class MainFrame ( wx.Frame ):
 
         self.axes25.set_axis_bgcolor('gray')
 
-        hfmt = dates.DateFormatter('%m/%d %H:%M')
-        # hfmt = dates.DateFormatter('%H:%M')
-        self.axes25.xaxis.set_major_locator(dates.MinuteLocator())
+        self.axes25.set_ybound(lower=0, upper=500)
+        self.axes10.set_ybound(lower=0, upper=500)
+
+        # hfmt = dates.DateFormatter('%m/%d %H:%M')
+        hfmt = dates.DateFormatter('%H:%M')
+        # self.axes25.xaxis.set_major_locator(dates.MinuteLocator())
+        self.axes25.xaxis.set_major_locator(dates.HourLocator())
         self.axes25.xaxis.set_major_formatter(hfmt)
-        self.axes10.xaxis.set_major_locator(dates.MinuteLocator())
+        # self.axes10.xaxis.set_major_locator(dates.MinuteLocator())
+        self.axes25.xaxis.set_major_locator(dates.HourLocator())
         self.axes10.xaxis.set_major_formatter(hfmt)    
+
         
         # self.axes25.get_xticklabels(), fontsize=8)
         # self.axes25.get_yticklabels(), fontsize=8)
         # self.axes10.get_xticklabels(), fontsize=8)
         # self.axes10.get_yticklabels(), fontsize=8)
 
+        
+        self.sleepTime = 10000
 
-        self.sleepTime = 5000
 
+        self.__queue = Queue()
+        self.__active = False
 
     
     def __del__( self ):
-        pass
-    
+        self.timer.Stop()
+        if self.__active == True:
+            self.__active = False
+            self.__thread.join()   
     
     # Virtual event handlers, overide them in your derived class
     def onStart( self, event ):
         self.timer.Start(self.sleepTime)
-    
+        if self.__active == False:
+            self.__thread = Thread(target = self.__run)
+            self.__active  = True
+            self.__thread.start()    
+
     def onStop( self, event ):
         self.timer.Stop()
+        if self.__active == True:
+            self.__active = False
+            self.__thread.join() 
+        
     
     def onQuit( self, event ):
+        self.timer.Stop()
+        if self.__active == True:
+            self.__active = False
+            self.__thread.join() 
         self.Close()
 
     def onTimer( self, event ):
+
+        event_ = Event(self.updateGraphy, type_=EVENT_TIMER)
+        self.__queue.put(event_)
+
+    def updateGraphy(self):
         self.tickerData.updateElement(self.sleepTime)
+        self.__plot()
 
-        self.plot()
+
+    def __run(self):
+        while self.__active == True:
+            try:
+                event_ = self.__queue.get(block = True, timeout = 1)  
+                self.__process(event_)
+            except Empty:
+                pass       
 
 
-    def plot(self,*args,**kwargs):  
+    def __process(self, event_):
+        event_.handle()
+
+    def __plot(self,*args,**kwargs):  
         '''update the plot here'''
 
          # how to change the x axis to time format
 
-        dts = map(datetime.datetime.fromtimestamp, self.tickerData.xTicker)
+        dts = map(datetime.fromtimestamp, self.tickerData.xTicker)
         fds = dates.date2num(dts) # converted
 
-        xmin = min(fds)
-        xmax = max(fds)+0.001
+        xmin = fds[0]
+        xmax = fds[-1]+0.001
+
+        diff = dts[-1]-dts[0]
+
 
         ymin = 0
         ymax = max(max(self.tickerData.y25Ticker), max(self.tickerData.y10Ticker))*1.5
@@ -185,12 +239,50 @@ class MainFrame ( wx.Frame ):
         self.axes10.set_xbound(lower=xmin, upper=xmax)
         self.axes10.set_ybound(lower=ymin, upper=ymax)
 
+        # X axis format setting
+        if diff < timedelta(minutes=20):
+            hfmt = dates.DateFormatter('%H:%M')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.MinuteLocator(byminute=range(60), interval=2))
+            self.axes25.xaxis.set_minor_locator(dates.MinuteLocator(interval=1))
+
+        elif diff < timedelta(hours=1):
+            hfmt = dates.DateFormatter('%H:%M')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.MinuteLocator(byminute=range(60), interval=5))
+            self.axes25.xaxis.set_minor_locator(dates.MinuteLocator(interval=2))
+
+        elif diff < timedelta(hours=6):
+            hfmt = dates.DateFormatter('%H:%M')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.HourLocator(interval=1))
+            self.axes25.xaxis.set_minor_locator(dates.MinuteLocator(interval=15))
+
+        elif diff < timedelta(days=2):
+            hfmt = dates.DateFormatter('%H:%M')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.HourLocator(interval=4))
+            self.axes25.xaxis.set_minor_locator(dates.HourLocator(interval=1))
+
+
+        elif diff < timedelta(days=10):
+            hfmt = dates.DateFormatter('%m/%d')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.DayLocator(interval=1))
+            self.axes25.xaxis.set_minor_locator(dates.HourLocator(interval=6))
+
+        elif diff < timedelta(days=40):
+            hfmt = dates.DateFormatter('%m/%d')
+            self.axes25.xaxis.set_major_formatter(hfmt)
+            self.axes25.xaxis.set_major_locator(dates.DayLocator(interval=2))
+
+
+
+
         self.plot_data25.set_xdata(fds)
-        # self.plot_data25.set_xdata(self.tickerData.xTicker)
         self.plot_data25.set_ydata(self.tickerData.y25Ticker)
 
         self.plot_data10.set_xdata(fds)
-        # self.plot_data10.set_xdata(self.tickerData.xTicker)
         self.plot_data10.set_ydata(self.tickerData.y10Ticker)
 
         xlabels = self.axes25.get_xticklabels()
@@ -205,6 +297,11 @@ class MainFrame ( wx.Frame ):
         self.FigureCanvas.draw()    
 
     
+
+
+     
+
+
 
 if __name__ == '__main__':
 
