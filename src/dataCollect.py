@@ -157,6 +157,57 @@ class AQIdata(object):
         return aqi
 
 
+
+
+
+class AQIdata2(object):
+    ''' 
+    for debug purpose.
+    created data randomly
+    '''
+    def __init__(self):
+        self.timeStamp = 0
+        self.timeStr = ''
+        self.pm25 = 0
+        self.pm10 = 0
+
+        # self.xtimeList = []
+        # self.y25List = []
+        # self.y10List = []
+
+        self.xTicker = np.array([])
+        self.y25Ticker = np.array([])
+        self.y10Ticker = np.array([])
+
+
+    def __del__( self ):
+
+
+
+    def __getAQIdata(self):
+
+        # random data for debug purpose
+        self.pm25 = random.random()
+        self.pm10 = random.random()
+
+        self.timeStamp = time.time()
+        self.timeStr = time.strftime('%d%b%Y_%H%M%S', time.localtime(self.timeStamp))
+
+
+    def updateElement(self, sleepTime):
+
+        self.sleepTime = sleepTime
+        
+        self.__getAQIdata()
+
+        self.xTicker = np.append(self.xTicker, self.timeStamp)
+        self.y25Ticker = np.append(self.y25Ticker, self.pm25)
+        self.y10Ticker = np.append(self.y10Ticker, self.pm10)
+
+
+  
+
+
 def runTimer():
     time.sleep(1)
 

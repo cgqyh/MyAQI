@@ -135,8 +135,8 @@ class MainFrame ( wx.Frame ):
         # initial plot the graphy here, only need to update data later
 
         # self.plot(self.tickerData.xTicker,self.tickerData.y25Ticker, '--+r', self.tickerData.xTicker,self.tickerData.y10Ticker,'--*g')  
-        self.plot_data25 = self.axes25.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'-+r')[0]  
-        self.plot_data10 = self.axes10.plot(self.tickerData.xTicker,self.tickerData.y10Ticker,'-*g')[0]  
+        self.plot_data25 = self.axes25.plot(self.tickerData.xTicker,self.tickerData.y25Ticker,'-sr')[0]  
+        self.plot_data10 = self.axes10.plot(self.tickerData.xTicker,self.tickerData.y10Ticker,'-dg')[0]  
 
         self.axes25.set_axis_bgcolor('gray')
 
