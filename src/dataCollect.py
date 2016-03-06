@@ -181,6 +181,7 @@ class AQIdata2(object):
 
 
     def __del__( self ):
+        pass
 
 
 
