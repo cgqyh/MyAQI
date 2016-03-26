@@ -12,6 +12,7 @@ import wx
 import wx.xrc
 from wx.lib.newevent import NewCommandEvent
 TimerChangeEvent, EVT_TIMER_CHANGE = NewCommandEvent()
+DisplayUpdate, EVT_DISP_UPDATE = wx.lib.newevent.NewEvent()
 
 import numpy as np
 
@@ -152,7 +153,11 @@ class MainFrame ( wx.Frame ):
         self.m_btn_quit.Bind( wx.EVT_BUTTON, self.onQuit )
         self.Bind( wx.EVT_TIMER, self.onTimer, id=wx.ID_ANY )
 
+        # Timer event
         self.Bind(EVT_TIMER_CHANGE, self.onChangeTimer)
+
+        #customer event
+        self.Bind(EVT_DISP_UPDATE, self.onDisplayUpdate)   
 
         # Create object for AQI data
 
@@ -242,7 +247,12 @@ class MainFrame ( wx.Frame ):
         event_ = Event(self.updateGraphy, type_=EVENT_TIMER)
         self.__queue.put(event_)
 
+
     def updateGraphy(self):
+        evt = DisplayUpdate()
+        wx.PostEvent(self, evt)
+
+    def onDisplayUpdate(self, event):
         nplen = len(self.tickerData.xTicker)
         if nplen>self.maxDatalen:
             for i in range((nplen/2)):
