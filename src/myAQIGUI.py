@@ -10,11 +10,16 @@
 
 import wx
 import wx.xrc
+from wx.lib.newevent import NewCommandEvent
+TimerChangeEvent, EVT_TIMER_CHANGE = NewCommandEvent()
+
+import numpy as np
 
 import matplotlib  
 
 from matplotlib import dates
 from datetime import datetime,timedelta
+import time
 
 # matplotlib采用WXAgg为后台,将matplotlib嵌入wxPython中  
 matplotlib.use("WXAgg")  
@@ -55,24 +60,32 @@ class MainFrame ( wx.Frame ):
         #####################################################
         # Manual Add Code
 
+        
+
         self.dpi = 100
         # self.Figure = matplotlib.figure.Figure(figsize=(10,3), dpi=self.dpi)
         self.Figure = matplotlib.figure.Figure(figsize=(50,30))
+        self.Figure.set_facecolor('white')
+        
         # self.axes = self.Figure.add_axes([0.1,0.1,0.8,0.8])
         self.axes25 = self.Figure.add_subplot(111)
         self.axes10 = self.axes25.twinx()
 
+
         self.FigureCanvas = FigureCanvas(self,-1,self.Figure) 
+
         #####################################################
 
         self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
-        
+        self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+        # self.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOW ) )
+
         MainSizer = wx.FlexGridSizer( 1, 3, 0, 0 )
         MainSizer.SetFlexibleDirection( wx.BOTH )
         MainSizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
         
 
-        leftSizer = wx.FlexGridSizer( 7, 1, 0, 0 )
+        leftSizer = wx.FlexGridSizer( 11, 1, 0, 0 )
         leftSizer.SetFlexibleDirection( wx.BOTH )
         leftSizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
 
@@ -101,7 +114,21 @@ class MainFrame ( wx.Frame ):
         self.m_staticText4 = wx.StaticText( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText4.Wrap( -1 )
         leftSizer.Add( self.m_staticText4, 0, wx.ALL | wx.EXPAND, 5 )
+
+
+        self.m__staticPM25label = wx.StaticText( self, wx.ID_ANY, u"PM2.5", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m__staticPM25label.Wrap( -1 )
+        leftSizer.Add( self.m__staticPM25label, 0, wx.ALL, 5 )
         
+        self.m_textPM25 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 40,-1 ), style =wx.TE_RIGHT  )
+        leftSizer.Add( self.m_textPM25, 0, wx.ALL, 5 )
+        
+        self.m_staticPM10label = wx.StaticText( self, wx.ID_ANY, u"PM10", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticPM10label.Wrap( -1 )
+        leftSizer.Add( self.m_staticPM10label, 0, wx.ALL, 5 )
+        
+        self.m_textPM10 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 40,-1 ), style =wx.TE_RIGHT )
+        leftSizer.Add( self.m_textPM10, 0, wx.ALL, 5 )
 
         MainSizer.Add( leftSizer, 1, wx.ALL | wx.EXPAND, 5 )
         
@@ -125,12 +152,11 @@ class MainFrame ( wx.Frame ):
         self.m_btn_quit.Bind( wx.EVT_BUTTON, self.onQuit )
         self.Bind( wx.EVT_TIMER, self.onTimer, id=wx.ID_ANY )
 
-
-
+        self.Bind(EVT_TIMER_CHANGE, self.onChangeTimer)
 
         # Create object for AQI data
 
-        self.tickerData = dataCollect.AQIdata()
+        self.tickerData = dataCollect.AQIdata2()
 
         # initial plot the graphy here, only need to update data later
 
@@ -159,7 +185,8 @@ class MainFrame ( wx.Frame ):
         # self.axes10.get_yticklabels(), fontsize=8)
 
         
-        self.sleepTime = 10000
+        self.sleepTime = 10 # 10 second delay
+        self.maxDatalen = 100000 #max 10E5 point
 
 
         self.__queue = Queue()
@@ -174,6 +201,10 @@ class MainFrame ( wx.Frame ):
     
     # Virtual event handlers, overide them in your derived class
     def onStart( self, event ):
+        self.__Start()
+
+
+    def __Start(self):
         self.timer.Start(self.sleepTime)
         if self.__active == False:
             self.__thread = Thread(target = self.__run)
@@ -181,12 +212,25 @@ class MainFrame ( wx.Frame ):
             self.__thread.start()    
 
     def onStop( self, event ):
+        self.__Stop()
+
+    def __Stop(self):
         self.timer.Stop()
         if self.__active == True:
             self.__active = False
             self.__thread.join() 
-        
-    
+
+    def post_timer_change_event(self, value):
+        '''
+        create a change timer event
+        '''
+        evt = TimerChangeEvent(self.Id, value=value)
+        wx.PostEvent(self, evt)    
+
+    def onChangeTimer(self, event):
+        value = event.value
+        self.timer.Start(value)
+
     def onQuit( self, event ):
         self.timer.Stop()
         if self.__active == True:
@@ -195,12 +239,25 @@ class MainFrame ( wx.Frame ):
         self.Close()
 
     def onTimer( self, event ):
-
         event_ = Event(self.updateGraphy, type_=EVENT_TIMER)
         self.__queue.put(event_)
 
     def updateGraphy(self):
+        nplen = len(self.tickerData.xTicker)
+        if nplen>self.maxDatalen:
+            for i in range((nplen/2)):
+                self.tickerData.xTicker = np.delete(self.tickerData.xTicker, i+1, 0)
+                self.tickerData.y25Ticker = np.delete(self.tickerData.y25Ticker, i+1, 0)
+                self.tickerData.y10Ticker = np.delete(self.tickerData.y10Ticker, i+1, 0)
+
+            self.sleepTime = self.sleepTime *2
+            self.post_timer_change_event(self.sleepTime)
+
         self.tickerData.updateElement(self.sleepTime)
+
+        self.m_textPM10.SetValue(str(int(self.tickerData.y10Ticker[-1])))
+        self.m_textPM25.SetValue(str(int(self.tickerData.y25Ticker[-1])))
+
         self.__plot()
 
 

@@ -188,8 +188,8 @@ class AQIdata2(object):
     def __getAQIdata(self):
 
         # random data for debug purpose
-        self.pm25 = random.random()
-        self.pm10 = random.random()
+        self.pm25 = random.random()*10+150
+        self.pm10 = random.random()*10+130
 
         self.timeStamp = time.time()
         self.timeStr = time.strftime('%d%b%Y_%H%M%S', time.localtime(self.timeStamp))
@@ -204,9 +204,6 @@ class AQIdata2(object):
         self.xTicker = np.append(self.xTicker, self.timeStamp)
         self.y25Ticker = np.append(self.y25Ticker, self.pm25)
         self.y10Ticker = np.append(self.y10Ticker, self.pm10)
-
-
-  
 
 
 def runTimer():
